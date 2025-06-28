@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aventuras en la Granja con Margarita</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Roboto&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f9e8;
+            user-select: none;
+        }
+        .font-fredoka {
+            font-family: 'Fredoka One', cursive;
+        }
+        .game-container {
+            width: 100%;
+            max-width: 1000px;
+            height: 100vh;
+            max-height: 700px;
+            background-image: url('https://img.freepik.com/free-vector/farm-cartoon-background_23-2148967409.jpg?w=1380');
+            background-size: cover;
+            background-position: center;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .game-screen {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(5px);
+        }
+        .margarita-character { 
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            width: 120px;
+            height: auto;
+            z-index: 10;
+            cursor: pointer;
+        }
+        .speech-bubble {
+            position: absolute;
+            bottom: 140px;
+            left: 20px;
+            background-color: white;
+            padding: 15px;
+            border-radius: 20px;
+            border: 4px solid #8B4513;
+            max-width: 300px;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            z-index: 11;
+        }
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50px;
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 20px solid #8B4513;
+        }
+        .action-button {
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-family: 'Fredoka One', cursive;
+        }
+        .action-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        .start-button, .next-phase-button {
+             background: linear-gradient(145deg, #FFD700, #FFA500);
+             border-bottom: 5px solid #CD853F;
+        }
+        .restart-phase-button {
+            background: linear-gradient(145deg, #ff6b6b, #ee5253);
+            border-bottom: 5px solid #b33939;
+        }
+        .mystery-box {
+            width: 150px;
+            height: 150px;
+            background-color: #A0522D;
+            border: 5px solid #8B4513;
+            color: #FFD700;
+            font-size: 5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+            border-radius: 15px;
+        }
+        .mystery-box:hover {
+            transform: scale(1.05);
+        }
+        .animal-choice, .puzzle-piece, .memory-card {
+            width: 120px;
+            height: 120px;
+            border: 4px solid transparent;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        .animal-choice:hover, .puzzle-piece:hover {
+            transform: scale(1.1);
+            border-color: #FFD700;
+        }
+        .drag-item {
+            cursor: grab;
+        }
+        .drop-zone {
+            width: 180px;
+            height: 180px;
+            border: 4px dashed #8B4513;
+            border-radius: 20px;
+            background-color: rgba(255, 255, 255, 0.7);
+        }
+        .star-reward {
+            position: absolute;
+            font-size: 5rem;
+            color: #FFD700;
+            animation: star-pop 0.5s ease-out;
+            z-index: 20;
+        }
+        @keyframes star-pop {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.5); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .memory-card {
+            background-color: #4682B4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 4rem;
+            color: white;
+        }
+        .memory-card.flipped, .memory-card.matched {
+            background-color: #ADD8E6;
+            transform: rotateY(180deg);
+        }
+        .rhyme-mic {
+            font-size: 6rem;
+            cursor: pointer;
+            color: #696969;
+            transition: color 0.3s;
+        }
+        .rhyme-mic.active {
+            color: #DC143C;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        #phase-end-controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 15;
+        }
+        .progress-tracker {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 5px;
+            z-index: 15;
+        }
+        .star-icon {
+            font-size: 2rem;
+            color: #D3D3D3;
+        }
+        .star-icon.earned {
+            color: #FFD700;
+        }
+        #diplomaScreen {
+            background-color: rgba(253, 246, 227, 0.9);
+            border: 10px solid #D4AF37;
+            border-radius: 15px;
+            color: #4A2E0A;
+        }
+    </style>
+</head>
+<body class="bg-green-100 flex justify-center items-center h-screen">
+
+    <div id="game" class="game-container" style="background-image: url('https://previews.123rf.com/images/jihane123/jihane1231506/jihane123150600055/41506570-farm-background-for-you-design.jpg');" onerror="this.onerror=null;this.style.backgroundImage=`url('https://placehold.co/1000x700/87CEEB/a1d9a3?text=Granja+Soleada')`">
+        <!-- Margarita, la Granjera -->
+        <img src="https://st3.depositphotos.com/1719108/17563/i/1600/depositphotos_175634066-stock-illustration-cartoon-farm-girl-farming-tool.jpg" alt="Margarita la Granjera" class="margarita-character" id="margaritaCharacter">
+        <div id="speechBubble" class="speech-bubble hidden"></div>
+
+        <!-- Rastreador de Progreso -->
+        <div id="progressTracker" class="progress-tracker">
+            <span class="star-icon" data-phase="1">☆</span>
+            <span class="star-icon" data-phase="2">☆</span>
+            <span class="star-icon" data-phase="3">☆</span>
+            <span class="star-icon" data-phase="4">☆</span>
+            <span class="star-icon" data-phase="5">☆</span>
+        </div>
+
+        <!-- Pantalla de Inicio -->
+        <div id="startScreen" class="game-screen flex-col items-center justify-center">
+            <h1 class="text-6xl text-yellow-900 font-fredoka mb-4" style="text-shadow: 3px 3px 0px #fff;">Aventuras en la Granja</h1>
+            <button id="startButton" class="action-button start-button">Iniciar Aventura</button>
+        </div>
+
+        <!-- Fases del Juego -->
+        <div id="phase1" class="game-screen hidden"></div>
+        <div id="phase2" class="game-screen hidden"></div>
+        <div id="phase3" class="game-screen hidden"></div>
+        <div id="phase4" class="game-screen hidden"></div>
+        <div id="phase5" class="game-screen hidden"></div>
+
+        <!-- Pantalla Final y Diploma -->
+        <div id="finalScreen" class="game-screen hidden flex-col items-center justify-center">
+            <h1 class="text-5xl font-fredoka text-yellow-500 mb-4" style="text-shadow: 2px 2px 0px #8B4513;">¡FELICIDADES!</h1>
+            <img id="hatReward" src="https://img1.picmix.com/output/stamp/normal/5/4/2/4/2354245_7a710.gif" alt="Sombrero de Margarita" class="w-48 my-4">
+            <button id="showDiplomaButton" class="action-button next-phase-button">Ver mi Diploma</button>
+        </div>
+        
+        <div id="diplomaScreen" class="game-screen hidden flex-col items-center justify-center p-8">
+            <h2 class="text-4xl font-fredoka mb-4">Diploma de Aventurero</h2>
+            <img src="https://usagif.com/wp-content/uploads/gify/felicidades-5-usagif.gif" alt="FELICIDADES" class="w-24 mb-4">
+            <p class="text-2xl mb-6">Por completar con éxito todas las misiones en la granja.</p>
+            <ul id="diplomaTasks" class="text-xl list-disc list-inside text-left">
+                <li data-task="1">✔️ Sonidos de Animales</li>
+                <li data-task="2">✔️ Hogares de Animales</li>
+                <li data-task="3">✔️ Rompecabezas del Caballo</li>
+                <li data-task="4">✔️ Juego de Memoria</li>
+                <li data-task="5">✔️ Rimas Divertidas</li>
+            </ul>
+        </div>
+
+        <!-- Controles de Fin de Fase (NUEVO) -->
+        <div id="phase-end-controls" class="hidden">
+            <button id="restartPhaseButton" class="action-button restart-phase-button">REINICIAR FASE</button>
+            <button id="nextPhaseButton" class="action-button next-phase-button">SIGUIENTE FASE</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Elementos del DOM
+            const game = document.getElementById('game');
+            const speechBubble = document.getElementById('speechBubble');
+            const startButton = document.getElementById('startButton');
+            const progressTracker = document.getElementById('progressTracker');
+            const margaritaCharacter = document.getElementById('margaritaCharacter');
+            
+            // Nuevos controles de fase
+            const phaseEndControls = document.getElementById('phase-end-controls');
+            const restartPhaseButton = document.getElementById('restartPhaseButton');
+            const nextPhaseButton = document.getElementById('nextPhaseButton');
+
+            const screens = {
+                start: document.getElementById('startScreen'),
+                phase1: document.getElementById('phase1'),
+                phase2: document.getElementById('phase2'),
+                phase3: document.getElementById('phase3'),
+                phase4: document.getElementById('phase4'),
+                phase5: document.getElementById('phase5'),
+                final: document.getElementById('finalScreen'),
+                diploma: document.getElementById('diplomaScreen'),
+            };
+
+            // Audios
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const sounds = {
+                applause: createSound(880, 0.5, 'triangle'),
+                correct: createSound(523.25, 0.2, 'sine'),
+                wrong: createSound(164.81, 0.3, 'sawtooth'),
+                star: createSound(1046.50, 0.3, 'square'),
+                animals: {
+                    vaca: new Audio("https://www.fiftysounds.com/music/sfx-animal-cow.mp3"),
+                    chancho: new Audio("https://www.fiftysounds.com/music/sfx-animal-pig.mp3"),
+                    oveja: new Audio("https://www.fiftysounds.com/music/sfx-animal-sheep.mp3"),
+                    gallo: new Audio("https://www.fiftysounds.com/music/sfx-animal-cock.mp3"),
+                    gato: new Audio("https://www.fiftysounds.com/music/sfx-animal-kitten.mp3"),
+                    caballo: new Audio("https://audio-previews.elements.envatousercontent.com/files/395118675/preview.mp3"),
+                }
+            };
+
+            function createSound(frequency, duration, type) {
+                return () => {
+                    if (!audioContext || audioContext.state === 'suspended') return;
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    oscillator.type = type;
+                    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+                    gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + duration);
+                    oscillator.start();
+                    oscillator.stop(audioContext.currentTime + duration);
+                };
+            }
+
+            function playVoice(text, callback) {
+                try {
+                    if ('speechSynthesis' in window) {
+                        window.speechSynthesis.cancel(); // Cancelar voces previas
+                        const utterance = new SpeechSynthesisUtterance(text);
+                        utterance.lang = 'es-ES';
+                        utterance.rate = 0.9;
+                        utterance.pitch = 1.2;
+                        utterance.onend = callback;
+                        window.speechSynthesis.speak(utterance);
+                    } else {
+                        if (callback) callback();
+                    }
+                } catch (e) {
+                    console.error("Speech Synthesis no es soportado", e);
+                    if (callback) callback();
+                }
+            }
+            
+            // Estado del Juego
+            let gameState = {
+                currentPhase: 0,
+                phasesCompleted: 0,
+                animals: [
+                    { id: 'vaca', name: 'Vaca', sound: sounds.animals.vaca, img: 'https://img.freepik.com/vector-gratis/vaca-sonriente-ilustracion-vectorial-dibujos-animados_96037-417.jpg', home: 'establo', homeImg: 'https://media.istockphoto.com/id/657320862/es/vector/caballo-rojo-graneros-en-dise%C3%B1o-plano.jpg?s=1024x1024&w=is&k=20&c=lsyrXEa7XFynnW0tXaNqd7z1gM2pBWxb588V0EbQkBg=' },
+                    { id: 'chancho', name: 'Chancho', sound: sounds.animals.chancho, img: 'https://st2.depositphotos.com/2945617/8585/v/450/depositphotos_85858996-stock-illustration-cute-pig-cartoon.jpg', home: 'lodo', homeImg: 'https://www.shutterstock.com/shutterstock/photos/2599889657/display_1500/stock-vector-vector-illustration-of-a-cartoon-mud-puddle-surrounded-by-grass-and-rocks-featuring-earthy-tones-2599889657.jpg' },
+                    { id: 'oveja', name: 'Oveja', sound: sounds.animals.oveja, img: 'https://img.freepik.com/vector-gratis/ilustracion-ovejas-dibujos-animados-dibujados-mano_23-2150375976.jpg', home: 'pradera', homeImg: 'https://img.freepik.com/vector-premium/escena-paisaje-pradera-blanco-dia_1308-64731.jpg' },
+                    { id: 'gallo', name: 'Gallo', sound: sounds.animals.gallo, img: 'https://static.vecteezy.com/system/resources/previews/004/398/107/non_2x/cartoon-rooster-icon-vector.jpg', home: 'gallinero', homeImg: 'https://media.istockphoto.com/id/155242206/es/vector/farm-gallinero.jpg?s=2048x2048&w=is&k=20&c=M6hQWjqg2ywpCXREy4szjOVWHM9Fz3GSnksbBMaZBOA=' },
+                    { id: 'gato', name: 'Gato', sound: sounds.animals.gato, img: 'https://img.freepik.com/vector-gratis/personaje-dibujos-animados-gatito-ojos-dulces_1308-135596.jpg', home: 'casa', homeImg: 'https://previews.123rf.com/images/ylivdesign/ylivdesign1704/ylivdesign170403863/76399497-cat-house-icon-flat-isolated-on-white-background-vector-illustration.jpg' },
+                ],
+                horse: { id: 'caballo', name: 'Caballo', sound: sounds.animals.caballo, img: 'https://previews.123rf.com/images/oleg1959/oleg19591602/oleg1959160200031/52158350-the-brown-horse-without-tail-is-grazed-on-a-meadow.jpg', tailImg: 'https://c7.alamy.com/comp/2HP81MP/horse-tail-icon-vector-illustration-design-2HP81MP.jpg' }
+            };
+
+            // --- Lógica del Juego ---
+
+            function init() {
+                gameState.currentPhase = 0;
+                gameState.phasesCompleted = 0;
+                showScreen('start');
+                speechBubble.classList.add('hidden');
+                phaseEndControls.classList.add('hidden');
+                updateProgressTracker();
+            }
+
+            function showScreen(screenId) {
+                Object.values(screens).forEach(screen => screen.classList.add('hidden'));
+                if(screens[screenId]) {
+                    screens[screenId].classList.remove('hidden');
+                }
+            }
+
+            function updateSpeechBubble(text, persist = false) {
+                speechBubble.textContent = text;
+                speechBubble.classList.remove('hidden');
+                playVoice(text);
+                if (!persist) {
+                    setTimeout(() => speechBubble.classList.add('hidden'), 5000);
+                }
+            }
+            
+            function showPhaseEndControls() {
+                phaseEndControls.classList.remove('hidden');
+            }
+
+            function advancePhase() {
+                phaseEndControls.classList.add('hidden');
+                if (gameState.currentPhase > 0) {
+                    gameState.phasesCompleted = Math.max(gameState.phasesCompleted, gameState.currentPhase);
+                    updateProgressTracker(gameState.currentPhase);
+                }
+                
+                gameState.currentPhase++;
+
+                switch (gameState.currentPhase) {
+                    case 1: startPhase1(); break;
+                    case 2: startPhase2(); break;
+                    case 3: startPhase3(); break;
+                    case 4: startPhase4(); break;
+                    case 5: startPhase5(); break;
+                    case 6: startFinalScreen(); break;
+                }
+            }
+
+            function restartCurrentPhase() {
+                phaseEndControls.classList.add('hidden');
+                switch(gameState.currentPhase) {
+                    case 1: startPhase1(); break;
+                    case 2: startPhase2(); break;
+                    case 3: startPhase3(); break;
+                    case 4: startPhase4(); break;
+                    case 5: startPhase5(); break;
+                }
+            }
+            
+            function showReward(element) {
+                sounds.star();
+                const star = document.createElement('div');
+                star.textContent = '⭐';
+                star.className = 'star-reward';
+                const rect = element.getBoundingClientRect();
+                const gameRect = game.getBoundingClientRect();
+                star.style.left = `${rect.left - gameRect.left + rect.width / 2 - 20}px`;
+                star.style.top = `${rect.top - gameRect.top + rect.height / 2 - 40}px`;
+                game.appendChild(star);
+                setTimeout(() => star.remove(), 1000);
+            }
+            
+            function updateProgressTracker(completedPhase = 0) {
+                const stars = progressTracker.querySelectorAll('.star-icon');
+                stars.forEach((star, index) => {
+                    if (index < gameState.phasesCompleted) {
+                        star.classList.add('earned');
+                        star.textContent = '⭐';
+                    } else {
+                        star.classList.remove('earned');
+                        star.textContent = '☆';
+                    }
+                });
+            }
+
+            // --- Fases Específicas ---
+
+            // Fase 1: Cajas Misteriosas
+            function startPhase1() {
+                showScreen('phase1');
+                const phaseContainer = screens.phase1;
+                phaseContainer.innerHTML = `
+                    <h2 id="phase1Title" class="text-4xl text-yellow-900 font-fredoka mb-8"></h2>
+                    <div id="mysteryBoxesContainer" class="flex flex-wrap justify-center gap-6 mb-8"></div>
+                    <div id="animalChoicesContainer" class="flex justify-center gap-6"></div>
+                `;
+
+                const title = phaseContainer.querySelector('#phase1Title');
+                const boxesContainer = phaseContainer.querySelector('#mysteryBoxesContainer');
+                const choicesContainer = phaseContainer.querySelector('#animalChoicesContainer');
+                
+                let animalsToFind = [...gameState.animals];
+                let currentAnimal;
+                let foundCount = 0;
+
+                updateSpeechBubble("¡Oh no! Mis amigos se escondieron. Ayúdame a encontrarlos.");
+                title.textContent = `Encontrados: ${foundCount} / 5`;
+
+                for(let i = 0; i < 5; i++) {
+                    const box = document.createElement('div');
+                    box.className = 'mystery-box font-fredoka';
+                    box.textContent = '?';
+                    box.onclick = () => {
+                        if (currentAnimal || animalsToFind.length === 0) return;
+                        
+                        box.style.visibility = 'hidden';
+                        
+                        const randomIndex = Math.floor(Math.random() * animalsToFind.length);
+                        currentAnimal = animalsToFind.splice(randomIndex, 1)[0];
+                        currentAnimal.sound.play();
+                        
+                        updateSpeechBubble("¿Qué animal hace ese sonido?", true);
+                        
+                        let choices = [currentAnimal];
+                        let allAnimals = [...gameState.animals];
+                        while(choices.length < 3) {
+                            let randomAnimal = allAnimals[Math.floor(Math.random() * allAnimals.length)];
+                            if(!choices.find(c => c.id === randomAnimal.id)) {
+                                choices.push(randomAnimal);
+                            }
+                        }
+                        choices.sort(() => Math.random() - 0.5);
+
+                        choicesContainer.innerHTML = '';
+                        choices.forEach(animal => {
+                            const choiceEl = document.createElement('div');
+                            choiceEl.className = 'animal-choice';
+                            choiceEl.style.backgroundImage = `url(${animal.img})`;
+                            choiceEl.onclick = () => {
+                                if (animal.id === currentAnimal.id) {
+                                    sounds.correct();
+                                    showReward(choiceEl);
+                                    updateSpeechBubble(`¡Sí, es ${animal.name}!`);
+                                    foundCount++;
+                                    title.textContent = `Encontrados: ${foundCount} / 5`;
+                                    currentAnimal = null;
+                                    choicesContainer.innerHTML = '';
+                                    if (foundCount === 5) {
+                                        updateSpeechBubble("¡Los encontramos todos! ¡Buen trabajo!");
+                                        sounds.applause();
+                                        showPhaseEndControls();
+                                    }
+                                } else {
+                                    sounds.wrong();
+                                    updateSpeechBubble("No, inténtalo otra vez.");
+                                }
+                            };
+                            choicesContainer.appendChild(choiceEl);
+                        });
+                    };
+                    boxesContainer.appendChild(box);
+                }
+            }
+            
+            // Fase 2: Arrastrar y soltar
+            function startPhase2() {
+                showScreen('phase2');
+                const phaseContainer = screens.phase2;
+                phaseContainer.innerHTML = `
+                    <div class="w-full h-full flex flex-col md:flex-row items-center justify-around">
+                        <div id="dragAnimalsContainer" class="flex flex-wrap justify-center md:flex-col gap-4"></div>
+                        <div id="dropZonesContainer" class="flex flex-wrap justify-center md:flex-col gap-4"></div>
+                    </div>`;
+
+                updateSpeechBubble("¡Llevemos a cada animal a su hogar!");
+                const dragContainer = phaseContainer.querySelector('#dragAnimalsContainer');
+                const dropContainer = phaseContainer.querySelector('#dropZonesContainer');
+                
+                let placedCount = 0;
+                const animals = [...gameState.animals].sort(() => Math.random() - 0.5);
+                const homes = [...gameState.animals].sort(() => Math.random() - 0.5);
+
+                animals.forEach(animal => {
+                    const animalEl = document.createElement('div');
+                    animalEl.id = `drag-${animal.id}`;
+                    animalEl.className = 'drag-item animal-choice';
+                    animalEl.style.backgroundImage = `url(${animal.img})`;
+                    animalEl.draggable = true;
+                    animalEl.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', animal.id));
+                    dragContainer.appendChild(animalEl);
+                });
+
+                homes.forEach(animal => {
+                    const homeEl = document.createElement('div');
+                    homeEl.id = `drop-${animal.id}`;
+                    homeEl.className = 'drop-zone';
+                    homeEl.style.backgroundImage = `url(${animal.homeImg})`;
+                    homeEl.style.backgroundSize = 'cover';
+
+                    homeEl.addEventListener('dragover', (e) => e.preventDefault());
+                    homeEl.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        const droppedAnimalId = e.dataTransfer.getData('text/plain');
+                        if (homeEl.id === `drop-${droppedAnimalId}` && !homeEl.dataset.filled) {
+                            homeEl.dataset.filled = true; // Mark as filled
+                            const animalEl = document.getElementById(`drag-${droppedAnimalId}`);
+                            animalEl.style.visibility = 'hidden';
+                            homeEl.style.borderStyle = 'solid';
+                            homeEl.style.borderColor = '#4CAF50';
+                            homeEl.style.opacity = '0.7';
+                            showReward(homeEl);
+                            sounds.correct();
+                            const foundAnimal = gameState.animals.find(a => a.id === droppedAnimalId);
+                            if(foundAnimal) {
+                                foundAnimal.sound.play();
+                                updateSpeechBubble(`¡Perfecto!  ${foundAnimal.name} está en casa.`);
+                            }
+                            placedCount++;
+                            if(placedCount === 5) {
+                                updateSpeechBubble("¡Todos los animales están en sus hogares! ¡Genial!");
+                                sounds.applause();
+                                showPhaseEndControls();
+                            }
+                        } else if (!homeEl.dataset.filled) {
+                            sounds.wrong();
+                        }
+                    });
+                    dropContainer.appendChild(homeEl);
+                });
+            }
+
+            // Fase 3: Rompecabezas del caballo
+            function startPhase3() {
+                showScreen('phase3');
+                const phaseContainer = screens.phase3;
+                phaseContainer.innerHTML = `
+                    <div class="flex flex-col items-center justify-around h-full">
+                      <div id="horsePuzzleArea" class="relative w-80 h-80 bg-no-repeat bg-center bg-contain mb-8"></div>
+                      <div id="puzzlePiecesContainer" class="flex gap-8"></div>
+                    </div>`;
+
+                updateSpeechBubble("¡Oh, no! El caballo perdió su cola. ¡Ayúdalo a encontrarla!");
+                const puzzleArea = phaseContainer.querySelector('#horsePuzzleArea');
+                const piecesContainer = phaseContainer.querySelector('#puzzlePiecesContainer');
+
+                puzzleArea.style.backgroundImage = `url(${gameState.horse.img})`;
+                
+                const wrongPieces = [
+                    {img: 'https://img.freepik.com/vector-premium/cuernos-toro-dibujos-animados-cuernos-mamiferos-salvajes-trofeo-caza-cuerno-toro-ilustracion-vectorial-plana-aislada-cuernos-animales-ungulados_627510-2860.jpg'},
+                    {img: 'https://previews.123rf.com/images/jemastock/jemastock1709/jemastock170907696/85391483-bird-wing-feathers-dove-animal-vector-illustration.jpg'}
+                ];
+                const pieces = [{img: gameState.horse.tailImg, correct: true}, ...wrongPieces].sort(() => Math.random() - 0.5);
+                
+                pieces.forEach(piece => {
+                    const pieceEl = document.createElement('div');
+                    pieceEl.className = 'puzzle-piece';
+                    pieceEl.style.backgroundImage = `url(${piece.img})`;
+                    pieceEl.onclick = () => {
+                        if(piece.correct) {
+                            sounds.correct();
+                            gameState.horse.sound.play();
+                            puzzleArea.style.backgroundImage = `url(https://previews.123rf.com/images/visible3dscience/visible3dscience1603/visible3dscience160304213/53247698-3d-rendered-illustration-of-funny-horse-cartoon-character.jpg)`;
+                            piecesContainer.innerHTML = '';
+                            showReward(puzzleArea);
+                            updateSpeechBubble("¡Gracias! ¡El caballo está feliz de nuevo!");
+                            sounds.applause();
+                            showPhaseEndControls();
+                        } else {
+                            sounds.wrong();
+                            pieceEl.style.animation = 'shake 0.5s';
+                            setTimeout(() => pieceEl.style.animation = '', 500);
+                        }
+                    };
+                    piecesContainer.appendChild(pieceEl);
+                });
+            }
+            
+            // Fase 4: Juego de memoria
+            function startPhase4() {
+                showScreen('phase4');
+                const phaseContainer = screens.phase4;
+                phaseContainer.innerHTML = `<div id="memoryGrid" class="grid grid-cols-4 gap-4"></div>`;
+                updateSpeechBubble("¡Juguemos a la memoria! Encuentra las parejas.");
+                const grid = phaseContainer.querySelector('#memoryGrid');
+                
+                let cards = [...gameState.animals.slice(0, 4), ...gameState.animals.slice(0, 4)];
+                cards.sort(() => Math.random() - 0.5);
+                
+                let flippedCards = [];
+                let matchedPairs = 0;
+
+                cards.forEach((animal, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'memory-card font-fredoka';
+                    card.dataset.id = animal.id;
+                    card.textContent = '?';
+                    
+                    card.addEventListener('click', () => {
+                        if (flippedCards.length < 2 && !card.classList.contains('flipped') && !card.classList.contains('matched')) {
+                            sounds.correct();
+                            card.classList.add('flipped');
+                            card.style.backgroundImage = `url(${animal.img})`;
+                            card.textContent = '';
+                            flippedCards.push(card);
+
+                            if (flippedCards.length === 2) {
+                                setTimeout(() => {
+                                    const [card1, card2] = flippedCards;
+                                    if (card1.dataset.id === card2.dataset.id) {
+                                        sounds.star();
+                                        card1.classList.add('matched');
+                                        card2.classList.add('matched');
+                                        const foundAnimal = gameState.animals.find(a => a.id === card1.dataset.id);
+                                        if(foundAnimal) foundAnimal.sound.play();
+                                        matchedPairs++;
+                                        if (matchedPairs === 4) {
+                                            updateSpeechBubble("¡Encontraste todas las parejas! ¡Qué buena memoria!");
+                                            sounds.applause();
+                                            showPhaseEndControls();
+                                        }
+                                    } else {
+                                        sounds.wrong();
+                                        card1.classList.remove('flipped');
+                                        card2.classList.remove('flipped');
+                                        card1.style.backgroundImage = '';
+                                        card2.style.backgroundImage = '';
+                                        card1.textContent = '?';
+                                        card2.textContent = '?';
+                                    }
+                                    flippedCards = [];
+                                }, 1000);
+                            }
+                        }
+                    });
+                    grid.appendChild(card);
+                });
+            }
+            
+            // Fase 5: Rimas
+            function startPhase5() {
+                showScreen('phase5');
+                const phaseContainer = screens.phase5;
+                phaseContainer.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full">
+                        <div id="rhymeText" class="text-4xl font-fredoka text-yellow-900 mb-8 p-4 bg-white/50 rounded-xl"></div>
+                        <div id="micIcon" class="rhyme-mic">🎤</div>
+                    </div>`;
+
+                const rhymeText = phaseContainer.querySelector('#rhymeText');
+                const micIcon = phaseContainer.querySelector('#micIcon');
+                const rhymes = ["Pato y gato juegan un rato.", "La oveja Teresa tiene pereza."];
+                let currentRhyme = 0;
+                
+                function presentRhyme() {
+                    if(currentRhyme >= rhymes.length) {
+                        sounds.applause();
+                        updateSpeechBubble("¡Lo hiciste increíble! ¡Eres un campeón de las rimas!");
+                        showPhaseEndControls();
+                        return;
+                    }
+                    const rhyme = rhymes[currentRhyme];
+                    rhymeText.textContent = rhyme;
+                    updateSpeechBubble("Repite después de mí...", true);
+                    playVoice(rhyme, () => {
+                        updateSpeechBubble("¡Ahora tú! Toca el micrófono.", true);
+                        micIcon.classList.add('active');
+                        micIcon.onclick = () => {
+                           sounds.correct();
+                           micIcon.classList.remove('active');
+                           micIcon.onclick = null;
+                           currentRhyme++;
+                           setTimeout(presentRhyme, 1000);
+                        };
+                    });
+                }
+                
+                presentRhyme();
+            }
+
+            // Pantalla Final
+            function startFinalScreen() {
+                showScreen('final');
+                updateSpeechBubble("¡FELICIDADES! ¡Completaste la aventura!", true);
+                sounds.applause();
+                document.getElementById('showDiplomaButton').onclick = () => {
+                    showScreen('diploma');
+                    updateSpeechBubble("¡Mira todo lo que lograste!", true);
+                };
+            }
+
+            // Event Listeners
+            margaritaCharacter.addEventListener('click', () => {
+                const welcomeMessage = "¡Hola! Soy Margarita. ¡Bienvenido a mi granja! ¿Estás listo para divertirte?";
+                updateSpeechBubble(welcomeMessage);
+            });
+
+            startButton.addEventListener('click', () => {
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                speechBubble.classList.add('hidden');
+                advancePhase();
+            });
+
+            nextPhaseButton.addEventListener('click', advancePhase);
+            restartPhaseButton.addEventListener('click', restartCurrentPhase);
+
+            // Iniciar el juego
+            init();
+        });
+    </script>
+</body>
+</html>
